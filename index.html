@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard de Inventario B2B Simplificado</title>
+  <title>Dashboard de Inventario Aguachica</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -26,7 +26,7 @@
           <i class="fa-solid fa-cubes text-2xl text-indigo-300"></i>
         </div>
         <div>
-          <h1 class="text-2xl font-bold tracking-tight">Dashboard de Inventario</h1>
+          <h1 class="text-2xl font-bold tracking-tight">Dashboard de Inventario Aguachica</h1>
           <p class="text-xs text-indigo-200">Monitoreo y análisis en tiempo real desde Google Sheets</p>
         </div>
       </div>
@@ -35,10 +35,10 @@
       <button 
         onclick="refreshData()" 
         id="btnRefresh"
-        class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-md hover:shadow-indigo-500/25 cursor-pointer disabled:cursor-not-allowed"
+        class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-md hover:shadow-indigo-500/25 cursor-pointer"
       >
         <i class="fa-solid fa-arrows-rotate" id="refreshIcon"></i>
-        <span id="btnText">Actualizar Datos</span>
+        <span>Actualizar Datos</span>
       </button>
     </div>
   </header>
@@ -72,7 +72,7 @@
           <i class="fa-solid fa-warehouse text-xl"></i>
         </div>
         <div>
-          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Sedes Autorizadas</span>
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Sedes / Bodegas</span>
           <span class="text-2xl font-extrabold text-slate-800" id="kpiSedes">0</span>
         </div>
       </div>
@@ -91,24 +91,10 @@
     <!-- Filtros de Inventario -->
     <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
       <div class="flex flex-wrap justify-between items-center mb-4 gap-3">
-        <div class="flex items-center gap-3">
-          <div class="flex items-center gap-2 text-slate-700 font-bold text-base">
-            <i class="fa-solid fa-filter text-indigo-600"></i>
-            <span>Filtros de Inventario</span>
-          </div>
-
-          <!-- Botón SOLO B2B -->
-          <button 
-            id="btnB2B" 
-            onclick="toggleFiltroB2B()" 
-            class="ml-2 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 border border-slate-300 bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer shadow-sm"
-          >
-            <i class="fa-solid fa-bolt text-slate-400" id="b2bIcon"></i>
-            <span>SOLO B2B</span>
-            <span id="b2bBadge" class="ml-1 px-1.5 py-0.5 rounded-full text-[9px] bg-slate-300 text-slate-700 font-extrabold">OFF</span>
-          </button>
+        <div class="flex items-center gap-2 text-slate-700 font-bold text-base">
+          <i class="fa-solid fa-filter text-indigo-600"></i>
+          <span>Filtros de Inventario</span>
         </div>
-
         <div class="flex items-center gap-3">
           <!-- Botón Exportar PDF -->
           <button 
@@ -122,18 +108,25 @@
           <button onclick="clearFilters()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 cursor-pointer">Limpiar Filtros</button>
         </div>
       </div>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label class="block text-xs font-semibold text-slate-500 mb-1">Sede / Bodega</label>
           <select id="selectBodega" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 text-slate-700 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500">
-            <option value="">Todas las Bodegas Autorizadas</option>
+            <option value="">Todas las Bodegas Aguachica</option>
           </select>
         </div>
         <div>
           <label class="block text-xs font-semibold text-slate-500 mb-1">Marca</label>
           <select id="selectMarca" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 text-slate-700 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500">
             <option value="">Todas las Marcas</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">Tarifa IVA</label>
+          <select id="selectIva" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-300 text-slate-700 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500">
+            <option value="">Todos los Tratamientos IVA</option>
+            <option value="EXENTO">EXENTO</option>
+            <option value="GRAVADO">GRAVADO AL 19%</option>
           </select>
         </div>
       </div>
@@ -143,7 +136,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
         <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-          <i class="fa-solid fa-chart-simple text-indigo-600"></i> Stock por Bodega Autorizada
+          <i class="fa-solid fa-chart-simple text-indigo-600"></i> Stock por Bodega Aguachica
         </h3>
         <div class="h-64 relative">
           <canvas id="barChart"></canvas>
@@ -164,7 +157,7 @@
       <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4">
         <div class="flex items-center gap-2 text-indigo-900 font-bold text-base">
           <i class="fa-solid fa-table-cells text-indigo-600"></i>
-          <span>Detalle de Productos</span>
+          <span>Detalle de Productos - Aguachica</span>
         </div>
         <div class="relative w-full sm:w-80">
           <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
@@ -186,14 +179,13 @@
               <th class="px-4 py-3">Referencia</th>
               <th class="px-4 py-3">Detalle / Descripción</th>
               <th class="px-4 py-3">Marca</th>
-              <th class="px-4 py-3">Sede</th>
-              <th class="px-4 py-3">Unidad</th>
               <th class="px-4 py-3 text-right">Cantidad</th>
+              <th class="px-4 py-3 text-center">Tarifa IVA</th>
             </tr>
           </thead>
           <tbody id="tableBody" class="divide-y divide-slate-100 bg-white">
             <tr>
-              <td colspan="6" class="text-center py-8 text-slate-400">Cargando datos desde Google Sheets...</td>
+              <td colspan="5" class="text-center py-8 text-slate-400">Cargando datos desde Google Sheets...</td>
             </tr>
           </tbody>
         </table>
@@ -205,25 +197,18 @@
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbw_7Kqupkzb8O2vCKZOGYq6Cx2MKZ-Gd5HZA6YGlnu8zAVFOUhWL0pRg_6Dp6CWwhCq/exec";
     
-    const BODEGAS_PERMITIDAS = new Set([
+    // Lista explícita con solo las bodegas de Aguachica
+    const BODEGAS_PERMITIDAS = [
       "AGUACHICA",
-      "B2B AGUACHICA",
-      "VALLEDUPAR",
-      "B2B VALLEDUPAR",
-      "BARRANQUILLA",
-      "B2B BARRANQUILLA",
-      "BODEGA PRINCIPAL",
-      "B2B PRINCIPAL"
-    ]);
-
-    const UNIDADES_B2B = ["BALDE", "TAMBOR", "CARTUCHO", "GARRAFA"];
+      "B2B AGUACHICA"
+    ];
 
     let inventoryData = [];
     let currentFilteredData = [];
     let barChartInst = null;
     let donutChartInst = null;
-    let isB2BActive = false;
 
+    // Helper Anti-XSS
     function escapeHTML(str) {
       return String(str).replace(/[&<>"']/g, function(m) {
         return {
@@ -236,123 +221,32 @@
       });
     }
 
-    function resolverUnidadMedida(item) {
-      const uRaw = String(item["Unidad"] || item["UNIDAD"] || item["unidad"] || item["Und"] || item["UND"] || "").trim().toUpperCase();
-      const det = String(item["Detalle"] || "").toUpperCase();
-
-      if (det.includes("BALDE") || uRaw.includes("BALDE")) return "BALDE";
-      if (det.includes("TAMBOR") || det.includes("208L") || uRaw.includes("TAMBOR")) return "TAMBOR";
-      if (det.includes("CARTUCHO") || uRaw.includes("CARTUCHO")) return "CARTUCHO";
-      if (det.includes("GARRAFA") || det.includes("5L") || det.includes("4L") || uRaw.includes("GARRAFA")) return "GARRAFA";
-
-      return uRaw || "UNIDAD";
-    }
-
-    function toggleFiltroB2B() {
-      isB2BActive = !isB2BActive;
-      const btn = document.getElementById('btnB2B');
-      const badge = document.getElementById('b2bBadge');
-      const icon = document.getElementById('b2bIcon');
-      const selectMarca = document.getElementById('selectMarca');
-
-      if (isB2BActive) {
-        btn.className = "ml-2 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 border border-indigo-500 bg-indigo-600 text-white shadow-md cursor-pointer";
-        badge.className = "ml-1 px-1.5 py-0.5 rounded-full text-[9px] bg-emerald-400 text-slate-900 font-extrabold";
-        badge.innerText = "ON";
-        icon.className = "fa-solid fa-bolt text-amber-300";
-
-        const opcionesMarca = Array.from(selectMarca.options);
-        const opcionMobil = opcionesMarca.find(opt => opt.value.toUpperCase().includes("MOBIL"));
-        if (opcionMobil) {
-          selectMarca.value = opcionMobil.value;
-        }
-      } else {
-        btn.className = "ml-2 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 border border-slate-300 bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer shadow-sm";
-        badge.className = "ml-1 px-1.5 py-0.5 rounded-full text-[9px] bg-slate-300 text-slate-700 font-extrabold";
-        badge.innerText = "OFF";
-        icon.className = "fa-solid fa-bolt text-slate-400";
-
-        selectMarca.value = "";
-      }
-
-      applyFilters();
-    }
-
-    // Callback global de procesamiento de datos
-    window.processInventoryResponse = function(rawData) {
+    async function loadDataFromGoogleSheets() {
       const icon = document.getElementById('refreshIcon');
-      const btnRefresh = document.getElementById('btnRefresh');
-      const btnText = document.getElementById('btnText');
-      const tbody = document.getElementById('tableBody');
-
-      try {
-        if (Array.isArray(rawData)) {
-          const processed = [];
-          
-          for (let i = 0; i < rawData.length; i++) {
-            const item = rawData[i];
-            const bodegaVal = String(item["Bodega"] || item["CONS BODEG"] || "").trim();
-            
-            if (BODEGAS_PERMITIDAS.has(bodegaVal.toUpperCase())) {
-              const cant = Number(item["Cantid"] !== undefined ? item["Cantid"] : (item["Cantidad"] || 0));
-              const ref = String(item["Referencia"] || item["Ref2"] || "000000");
-              const detalle = String(item["Detalle"] || "");
-              const marca = String(item["Marca"] || "OTRAS").trim();
-              const unidad = resolverUnidadMedida(item);
-
-              processed.push({
-                ref,
-                detalle,
-                marca,
-                unidad,
-                sede: bodegaVal,
-                cantidad: isNaN(cant) ? 0 : cant,
-                searchIndex: `${ref} ${detalle} ${marca} ${unidad} ${bodegaVal}`.toLowerCase()
-              });
-            }
-          }
-
-          inventoryData = processed;
-          populateSelectOptions();
-          applyFilters();
-        } else {
-          throw new Error("Respuesta no válida");
-        }
-      } catch (err) {
-        console.error("Error al procesar datos:", err);
-        if (tbody) {
-          tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-red-500 font-semibold">Error al interpretar el formato de respuesta.</td></tr>';
-        }
-      } finally {
-        if (icon) icon.classList.remove('fa-spin');
-        if (btnRefresh) btnRefresh.disabled = false;
-        if (btnText) btnText.innerText = 'Actualizar Datos';
-      }
-    };
-
-    // Consulta por inyección dinámica de Script (Evasión de políticas CORS)
-    function loadDataFromGoogleSheets() {
-      const icon = document.getElementById('refreshIcon');
-      const btnRefresh = document.getElementById('btnRefresh');
-      const btnText = document.getElementById('btnText');
       const tbody = document.getElementById('tableBody');
       
       if (icon) icon.classList.add('fa-spin');
-      if (btnRefresh) btnRefresh.disabled = true;
-      if (btnText) btnText.innerText = 'Cargando...';
-
       if (tbody) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Cargando datos desde Google Sheets...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Cargando datos desde Google Sheets...</td></tr>';
       }
 
-      // Eliminar scripts de consultas previas si existen
-      const oldScript = document.getElementById('gsScriptRequest');
-      if (oldScript) oldScript.remove();
+      try {
+        const response = await fetch(API_URL, {
+          method: "GET",
+          redirect: "follow"
+        });
 
-      // Intento primario por Fetch, fallback automático a Script Tag
-      fetch(API_URL, { redirect: "follow" })
-        .then(res => {
-          if (!res.ok) throw new Error("Fetch falló");
-          return res.json();
-        })
-        .then(data => window.processInventoryResponse(data))
+        if (!response.ok) {
+          throw new Error(`Error en la petición: ${response.status} ${response.statusText}`);
+        }
+
+        const rawData = await response.json();
+
+        if (Array.isArray(rawData)) {
+          // Mapeo y filtrado exclusivo para las bodegas de Aguachica
+          inventoryData = rawData
+            .map(item => {
+              const cant = Number(item["Cantid"] !== undefined ? item["Cantid"] : (item["Cantidad"] || 0));
+              const bodegaVal = String(item["Bodega"] || item["CONS BODEG"] || "").trim();
+              const consBodegaVal = String(item["CONS BODEG"] || item["Bodega"] || "").trim();
+              const tarifaIvaVal = String(item["Tarifa de iva"] || item["Tarifa iva"] || "EXENTO
