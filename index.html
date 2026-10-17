@@ -277,23 +277,26 @@
         tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Cargando datos desde Google Sheets...</td></tr>';
       }
 
-      // Carga limpia usando un script tag dinámico sin restricciones CORS
-      const oldScript = document.getElementById('dynamic_gs_script');
-      if (oldScript) oldScript.remove();
-
-      const script = document.createElement('script');
-      script.id = 'dynamic_gs_script';
-      
-      // Intentar primero fetch para navegadores con CORS habilitado
+      // Consulta tolerante a navegadores sin restricciones CORS
       fetch(API_URL, { method: "GET", redirect: "follow" })
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+          return res.json();
+        })
         .then(data => processRawData(data))
-        .catch(() => {
-          // Si el fetch da error de CORS, inyecta el script tag
+        .catch(err => {
+          console.warn("Iniciando alternativa de consulta...", err);
+          
+          const oldScript = document.getElementById('dynamic_gs_script');
+          if (oldScript) oldScript.remove();
+
+          const script = document.createElement('script');
+          script.id = 'dynamic_gs_script';
           script.src = API_URL;
+          
           script.onerror = function() {
             if (tbody) {
-              tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-red-500 font-semibold">No se pudo conectar con Google Sheets.</td></tr>';
+              tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-red-500 font-semibold">No se pudo conectar con Google Sheets. Verifica que el despliegue en Apps Script esté como "Cualquier persona".</td></tr>';
             }
             if (icon) icon.classList.remove('fa-spin');
             if (btnRefresh) btnRefresh.disabled = false;
@@ -381,4 +384,184 @@
             <td class="px-4 py-3 font-semibold text-slate-700">${escapeHTML(item.ref)}</td>
             <td class="px-4 py-3 font-medium text-slate-800">${escapeHTML(item.detalle)}</td>
             <td class="px-4 py-3">
-              <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium text
+              <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium text-[11px]">${escapeHTML(item.marca)}</span>
+            </td>
+            <td class="px-4 py-3 text-right font-bold text-slate-800">${item.cantidad.toLocaleString()}</td>
+            <td class="px-4 py-3 text-center">${ivaBadge}</td>
+          </tr>
+        `;
+      }).join('');
+
+      tbody.innerHTML = rowsHtml;
+    }
+
+    function renderCharts(data) {
+      const sedeGroup = {};
+      const marcaGroup = {};
+
+      data.forEach(d => {
+        if (d.sede) sedeGroup[d.sede] = (sedeGroup[d.sede] || 0) + d.cantidad;
+        if (d.marca) marcaGroup[d.marca] = (marcaGroup[d.marca] || 0) + d.cantidad;
+      });
+
+      const ctxBar = document.getElementById('barChart').getContext('2d');
+      if (barChartInst) barChartInst.destroy();
+      barChartInst = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(sedeGroup),
+          datasets: [{
+            label: 'Unidades',
+            data: Object.values(sedeGroup),
+            backgroundColor: '#4f46e5',
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+
+      const ctxDonut = document.getElementById('donutChart').getContext('2d');
+      if (donutChartInst) donutChartInst.destroy();
+      donutChartInst = new Chart(ctxDonut, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(marcaGroup),
+          datasets: [{
+            data: Object.values(marcaGroup),
+            backgroundColor: ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#64748b']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }
+        }
+      });
+    }
+
+    // Exportación a PDF ordenada por Marcas y de Menor a Mayor en Cantidad
+    function exportarPDF() {
+      if (!currentFilteredData || currentFilteredData.length === 0) {
+        alert("No hay información filtrada para exportar a PDF.");
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+
+      const marcasMap = {};
+      currentFilteredData.forEach(item => {
+        const marca = item.marca || 'OTRAS';
+        if (!marcasMap[marca]) marcasMap[marca] = [];
+        marcasMap[marca].push(item);
+      });
+
+      const marcasOrdenadas = Object.keys(marcasMap).sort();
+
+      doc.setFillColor(42, 43, 114);
+      doc.rect(0, 0, 210, 22, 'F');
+      
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(15);
+      doc.setTextColor(255, 255, 255);
+      doc.text("INVENTARIO AGUACHICA - DETALLE POR MARCAS", 14, 12);
+
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(200, 210, 255);
+      doc.text(`Fecha de generación: ${new Date().toLocaleString()}`, 14, 18);
+
+      let startY = 28;
+
+      marcasOrdenadas.forEach((marca, index) => {
+        // Ordenar productos de menor a mayor cantidad
+        const productosMarca = marcasMap[marca].sort((a, b) => a.cantidad - b.cantidad);
+        const totalCantMarca = productosMarca.reduce((acc, curr) => acc + curr.cantidad, 0);
+
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(42, 43, 114);
+        doc.text(`MARCA: ${marca.toUpperCase()} (${productosMarca.length} Regs. | ${totalCantMarca.toLocaleString()} Unids.)`, 14, startY);
+
+        const tableBody = productosMarca.map(p => {
+          const isExento = p.iva === "1" || p.porcentajeIva === "0" || p.iva.toUpperCase().includes('EXENTO');
+          return [
+            p.ref,
+            p.detalle,
+            p.sede,
+            p.cantidad.toLocaleString(),
+            isExento ? "EXENTO" : "GRAVADO 19%"
+          ];
+        });
+
+        doc.autoTable({
+          startY: startY + 3,
+          head: [['Referencia', 'Detalle / Descripción', 'Sede', 'Cantidad', 'Tarifa IVA']],
+          body: tableBody,
+          theme: 'striped',
+          headStyles: {
+            fillColor: [79, 70, 229],
+            textColor: 255,
+            fontSize: 8,
+            fontStyle: 'bold'
+          },
+          bodyStyles: {
+            fontSize: 7.5,
+            textColor: [51, 65, 85]
+          },
+          columnStyles: {
+            0: { cellWidth: 25, fontStyle: 'bold' },
+            1: { cellWidth: 'auto' },
+            2: { cellWidth: 30 },
+            3: { cellWidth: 22, halign: 'right', fontStyle: 'bold' },
+            4: { cellWidth: 28, halign: 'center' }
+          },
+          margin: { left: 14, right: 14 }
+        });
+
+        startY = doc.lastAutoTable.finalY + 8;
+
+        if (startY > 270 && index < marcasOrdenadas.length - 1) {
+          doc.addPage();
+          startY = 20;
+        }
+      });
+
+      const totalGlobalUnidades = currentFilteredData.reduce((acc, curr) => acc + curr.cantidad, 0);
+      if (startY > 260) {
+        doc.addPage();
+        startY = 20;
+      }
+
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, startY, 196, startY);
+
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(30, 41, 59);
+      doc.text(`TOTAL GENERAL AGUACHICA: ${currentFilteredData.length.toLocaleString()} Registros | ${totalGlobalUnidades.toLocaleString()} Unidades Totales`, 14, startY + 6);
+
+      doc.save(`Inventario_Aguachica_${new Date().toISOString().slice(0,10)}.pdf`);
+    }
+
+    function clearFilters() {
+      document.getElementById('selectBodega').value = '';
+      document.getElementById('selectMarca').value = '';
+      document.getElementById('selectIva').value = '';
+      document.getElementById('searchInput').value = '';
+      applyFilters();
+    }
+
+    function refreshData() {
+      loadDataFromGoogleSheets();
+    }
+
+    document.addEventListener('DOMContentLoaded', loadDataFromGoogleSheets);
+  </script>
+</body>
+</html>
